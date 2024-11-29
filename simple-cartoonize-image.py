@@ -41,6 +41,16 @@ def adjust_gamma(image, gamma=1.0):
     table = np.array([(i / 255.0) ** inv_gamma * 255 for i in np.arange(256)]).astype("uint8")
     return cv2.LUT(image, table)
 
+def apply_background_blur(image, edges, blur_strength=15):
+    """
+    Apply Gaussian blur to the background based on edge detection.
+    """
+    mask = cv2.bitwise_not(edges)  # Invert edges to create mask
+    mask_colored = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)  # Convert mask to 3 channels
+    blurred_background = cv2.GaussianBlur(image, (blur_strength, blur_strength), 0)
+    blended = np.where(mask_colored == 0, blurred_background, image)
+    return blended
+
 def cartoonize_image(image_path, output_path, max_width=1200, max_height=1200):
     img = cv2.imread(image_path)
     if img is None:
@@ -52,8 +62,10 @@ def cartoonize_image(image_path, output_path, max_width=1200, max_height=1200):
     gray = cv2.cvtColor(gamma_corrected, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     edges = cv2.Canny(blurred, threshold1=50, threshold2=150)
+    # edges = thicken_edges(edges, kernel_size=2)
     color = cv2.bilateralFilter(gamma_corrected, d=9, sigmaColor=120, sigmaSpace=120)
-    quantized = kmeans_color_quantization(color, clusters=20)
+    quantized = kmeans_color_quantization(color, clusters=30)
+    blurred_background = apply_background_blur(quantized, edges, blur_strength=21)
 
     # Invert edges to make them white on black background
     edges_inv = cv2.bitwise_not(edges)
@@ -62,7 +74,10 @@ def cartoonize_image(image_path, output_path, max_width=1200, max_height=1200):
     # Blend the quantized image and the inverted edges
     alpha = 0.8  # Weight for the color image
     beta = 0.2   # Weight for the edges
-    cartoon = cv2.addWeighted(quantized, alpha, edges_inv_colored, beta, 0)
+    cartoon = cv2.addWeighted(blurred_background, alpha, edges_inv_colored, beta, 0)
+    # cartoon_sharpened = sharpen_image(cartoon)
+    # cartoon = blend_with_original(cartoon, cartoon_sharpened, alpha=0.6)
+    # cartoon = normalize_brightness(cartoon)
 
     cv2.imwrite(output_path, cartoon)
     print(f"Enhanced cartoonized image saved at {output_path}")
@@ -98,3 +113,56 @@ if __name__ == "__main__":
     input_path = "image/2.jpg"
     output_path = "enhanced_output_cartoon.jpg"
     cartoonize_image(input_path, output_path)
+
+def thicken_edges(edges, kernel_size=3):
+    """
+    Thicken the edges using dilation.
+    """
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    thickened_edges = cv2.dilate(edges, kernel, iterations=1)
+    return thickened_edges
+
+def sharpen_image(image, strength=1.0):
+    """
+    Apply a softer sharpening effect to the image.
+    
+    Parameters:
+    - image: Input image.
+    - strength: Strength of the sharpening effect (default=1.0). Lower values produce softer sharpening.
+
+    Returns:
+    - sharpened: Sharpened image.
+    """
+    kernel_sharpening = np.array([[0, -1, 0],
+                                  [-1, 4 + strength, -1],
+                                  [0, -1, 0]])
+    sharpened = cv2.filter2D(image, -1, kernel_sharpening)
+    return sharpened
+
+def blend_with_original(image, sharpened, alpha=0.7):
+    """
+    Blend the sharpened image with the original image for softer sharpening.
+    
+    Parameters:
+    - image: Original image.
+    - sharpened: Sharpened image.
+    - alpha: Weight of the sharpened image (default=0.7).
+
+    Returns:
+    - blended: Final blended image.
+    """
+    blended = cv2.addWeighted(image, 1 - alpha, sharpened, alpha, 0)
+    return blended
+
+def normalize_brightness(image):
+    """
+    Normalize brightness to avoid overexposure.
+    
+    Parameters:
+    - image: Input image.
+
+    Returns:
+    - normalized: Brightness-normalized image.
+    """
+    normalized = cv2.normalize(image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+    return normalized
