@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartoonize Image</title>
+    <title>Image Processing</title>
 </head>
 <body>
-    <h1>Upload an Image to Cartoonize</h1>
-    <form id="cartoonizeForm" enctype="multipart/form-data">
+    <h1>Image Processing</h1>
+    <form id="imageForm" enctype="multipart/form-data">
         <label for="image">Choose an image:</label>
         <input type="file" id="image" name="image" accept="image/*" required>
         <br><br>
@@ -23,22 +23,30 @@
         <br><br>
 
         <label for="saturation">Saturation:</label>
-        <input type="range" id="saturation" name="saturation" min="0" max="3" step="0.1" value="1">
-        <span id="saturationValue">1</span>
+        <input type="range" id="saturation" name="saturation" min="0.0" max="3.0" step="0.1" value="1.0">
+        <span id="saturationValue">1.0</span>
         <br><br>
 
-        <button type="button" id="cartoonizeButton">Upload and Cartoonize</button>
+        <label for="cartoonize">Cartoonize:</label>
+        <input type="checkbox" id="cartoonize" name="cartoonize" value="true">
+        <br><br>
+
+        <label for="black_and_white">Black & White:</label>
+        <input type="checkbox" id="black_and_white" name="black_and_white" value="true">
+        <br><br>
+
+        <button type="button" id="processButton">Upload and Process</button>
     </form>
 
     <h2>Result:</h2>
-    <img id="resultImage" alt="Cartoonized image will appear here" style="max-width: 100%; border: 1px solid black;">
+    <img id="resultImage" alt="Processed image will appear here" style="max-width: 100%; border: 1px solid black;">
 
     <script>
-        const form = document.getElementById('cartoonizeForm');
-        const cartoonizeButton = document.getElementById('cartoonizeButton');
+        const form = document.getElementById('imageForm');
+        const processButton = document.getElementById('processButton');
         const resultImage = document.getElementById('resultImage');
 
-        // Update slider values
+        // Update slider values in real-time
         document.querySelectorAll('input[type="range"]').forEach(slider => {
             slider.addEventListener('input', (event) => {
                 const valueSpan = document.getElementById(slider.id + "Value");
@@ -47,10 +55,13 @@
         });
 
         // Handle form submission
-        cartoonizeButton.addEventListener('click', async () => {
+        processButton.addEventListener('click', async () => {
             const formData = new FormData(form);
 
-            // Make AJAX request
+            // Include checkbox values
+            formData.append('cartoonize', document.getElementById('cartoonize').checked);
+            formData.append('black_and_white', document.getElementById('black_and_white').checked);
+
             const response = await fetch('/cartoonize', {
                 method: 'POST',
                 body: formData

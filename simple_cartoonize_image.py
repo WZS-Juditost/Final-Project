@@ -35,37 +35,12 @@ def apply_background_blur(image, edges, blur_strength=15):
     blended = np.where(mask_colored == 0, blurred_background, image)
     return blended
 
-def cartoonize_image(image_path, output_path, max_width=1200, max_height=1200,
-                     brightness=0, contrast=0, saturation=1.0):
-    img = cv2.imread(image_path)
-    if img is None:
-        print("Unable to read the image. Please check the path!")
-        return
-
-    resized_img = resize_image_proportionally(img, max_width, max_height)
-
-    # Adjust brightness, contrast, and saturation
-    adjusted_brightness_contrast = adjust_brightness_contrast(resized_img, brightness, contrast)
-    adjusted_saturation = adjust_saturation(adjusted_brightness_contrast, saturation)
-
-    gamma_corrected = adjust_gamma(adjusted_saturation, gamma=1.5)
-    gray = cv2.cvtColor(gamma_corrected, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    edges = cv2.Canny(blurred, threshold1=50, threshold2=150)
-
-    color = cv2.bilateralFilter(gamma_corrected, d=9, sigmaColor=120, sigmaSpace=120)
-    quantized = kmeans_color_quantization(color, clusters=20)
-    blurred_background = apply_background_blur(quantized, edges, blur_strength=21)
-
-    edges_inv = cv2.bitwise_not(edges)
-    edges_inv_colored = cv2.cvtColor(edges_inv, cv2.COLOR_GRAY2BGR)
-
-    alpha = 0.8  # Weight for the color image
-    beta = 0.2   # Weight for the edges
-    cartoon = cv2.addWeighted(blurred_background, alpha, edges_inv_colored, beta, 0)
-
-    cv2.imwrite(output_path, cartoon)
-    print(f"Enhanced cartoonized image saved at {output_path}")
+def convert_to_black_and_white(image):
+    """
+    Convert the image to black and white (grayscale).
+    """
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    return cv2.cvtColor(gray_image, cv2.COLOR_GRAY2BGR)
 
 def resize_image_proportionally(image, max_width, max_height):
     original_height, original_width = image.shape[:2]
@@ -88,8 +63,70 @@ def resize_image_proportionally(image, max_width, max_height):
     resized_image = cv2.resize(image, (new_width, new_height))
     return resized_image
 
-# Test the cartoonization function
+def process_black_and_white(image, brightness=0, contrast=0):
+    """
+    Process the image to convert it to black and white.
+    """
+    adjusted = adjust_brightness_contrast(image, brightness, contrast)
+    bw_image = convert_to_black_and_white(adjusted)
+    return bw_image
+
+def process_cartoonization(image, brightness=0, contrast=0, saturation=1.0):
+    """
+    Process the image to apply cartoonization effects.
+    """
+
+    adjusted_brightness_contrast = adjust_brightness_contrast(image, brightness, contrast)
+    adjusted_saturation = adjust_saturation(adjusted_brightness_contrast, saturation)
+
+    gamma_corrected = adjust_gamma(adjusted_saturation, gamma=1.5)
+    gray = cv2.cvtColor(gamma_corrected, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blurred, threshold1=50, threshold2=150)
+    color = cv2.bilateralFilter(gamma_corrected, d=9, sigmaColor=120, sigmaSpace=120)
+    quantized = kmeans_color_quantization(color, clusters=20)
+    blurred_background = apply_background_blur(quantized, edges, blur_strength=21)
+    edges_inv = cv2.bitwise_not(edges)
+    edges_inv_colored = cv2.cvtColor(edges_inv, cv2.COLOR_GRAY2BGR)
+    alpha = 0.8
+    beta = 0.2
+    cartoonized_img = cv2.addWeighted(blurred_background, alpha, edges_inv_colored, beta, 0)
+    
+    return cartoonized_img
+
+def process_image(image_path, output_path, max_width=1200, max_height=1200,
+                  brightness=0, contrast=0, saturation=1.0,
+                  apply_cartoon=False, apply_bw=False):
+    """
+    Main function to process an image, applying optional cartoonization and/or black-and-white conversion.
+    """
+    img = cv2.imread(image_path)
+    if img is None:
+        print("Unable to read the image. Please check the path!")
+        return
+
+
+    resized_img = resize_image_proportionally(img, max_width, max_height)
+
+    if apply_cartoon:
+        processed_img = process_cartoonization(resized_img, brightness, contrast, saturation)
+    else:
+        processed_img = resized_img
+    if apply_bw:
+        processed_img = process_black_and_white(processed_img, brightness, contrast)
+
+    cv2.imwrite(output_path, processed_img)
+    print(f"Processed image saved at {output_path}")
+
+
 if __name__ == "__main__":
     input_path = "image/2.jpg"
-    output_path = "enhanced_output_cartoon.jpg"
-    cartoonize_image(input_path, output_path, brightness=30, contrast=20, saturation=1.5)
+    output_path_bw = "output_black_and_white.jpg"
+    output_path_cartoon = "output_cartoon.jpg"
+    output_path_combined = "output_combined.jpg"
+
+    process_image(input_path, output_path_bw, brightness=20, contrast=10, apply_bw=True)
+    process_image(input_path, output_path_cartoon, brightness=30, contrast=20, saturation=1.5, apply_cartoon=True)
+    process_image(input_path, output_path_combined, brightness=30, contrast=20, saturation=1.5,
+                  apply_cartoon=True, apply_bw=True)
+
