@@ -27,12 +27,18 @@ def cartoonize():
     if file.filename == '':
         return "No image selected", 400
 
+    # Get additional parameters
+    brightness = int(request.form.get('brightness', 0))
+    contrast = int(request.form.get('contrast', 0))
+    saturation = float(request.form.get('saturation', 1.0))
+
     input_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(input_path)
 
     output_path = os.path.join(app.config['RESULT_FOLDER'], f"cartoon_{file.filename}")
 
-    cartoonize_image(input_path, output_path)
+    # Pass parameters to cartoonize_image
+    cartoonize_image(input_path, output_path, brightness=brightness, contrast=contrast, saturation=saturation)
 
     return send_file(output_path, mimetype='image/jpeg')
 

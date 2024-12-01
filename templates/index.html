@@ -7,11 +7,63 @@
 </head>
 <body>
     <h1>Upload an Image to Cartoonize</h1>
-    <form action="/cartoonize" method="post" enctype="multipart/form-data">
+    <form id="cartoonizeForm" enctype="multipart/form-data">
         <label for="image">Choose an image:</label>
         <input type="file" id="image" name="image" accept="image/*" required>
         <br><br>
-        <button type="submit">Upload and Cartoonize</button>
+
+        <label for="brightness">Brightness:</label>
+        <input type="range" id="brightness" name="brightness" min="-100" max="100" value="0">
+        <span id="brightnessValue">0</span>
+        <br><br>
+
+        <label for="contrast">Contrast:</label>
+        <input type="range" id="contrast" name="contrast" min="-100" max="100" value="0">
+        <span id="contrastValue">0</span>
+        <br><br>
+
+        <label for="saturation">Saturation:</label>
+        <input type="range" id="saturation" name="saturation" min="0" max="3" step="0.1" value="1">
+        <span id="saturationValue">1</span>
+        <br><br>
+
+        <button type="button" id="cartoonizeButton">Upload and Cartoonize</button>
     </form>
+
+    <h2>Result:</h2>
+    <img id="resultImage" alt="Cartoonized image will appear here" style="max-width: 100%; border: 1px solid black;">
+
+    <script>
+        const form = document.getElementById('cartoonizeForm');
+        const cartoonizeButton = document.getElementById('cartoonizeButton');
+        const resultImage = document.getElementById('resultImage');
+
+        // Update slider values
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            slider.addEventListener('input', (event) => {
+                const valueSpan = document.getElementById(slider.id + "Value");
+                valueSpan.textContent = event.target.value;
+            });
+        });
+
+        // Handle form submission
+        cartoonizeButton.addEventListener('click', async () => {
+            const formData = new FormData(form);
+
+            // Make AJAX request
+            const response = await fetch('/cartoonize', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                resultImage.src = imageUrl;
+            } else {
+                alert("Error processing image!");
+            }
+        });
+    </script>
 </body>
 </html>
