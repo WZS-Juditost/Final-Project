@@ -86,17 +86,6 @@ def apply_oil_painting(image, size=7, dyn_ratio=1):
     oil_painting = cv2.xphoto.oilPainting(image, size, dyn_ratio)
     return oil_painting
 
-def apply_vignette(image, strength=0.5):
-    """Apply a vignette effect to the image."""
-    rows, cols = image.shape[:2]
-    kernel_x = cv2.getGaussianKernel(cols, cols * strength)
-    kernel_y = cv2.getGaussianKernel(rows, rows * strength)
-    kernel = kernel_y @ kernel_x.T
-    mask = kernel / kernel.max()
-    vignette_image = np.zeros_like(image)
-    for i in range(3):  # Apply the mask to each channel
-        vignette_image[:, :, i] = image[:, :, i] * mask
-    return vignette_image
 
 def apply_cartoon_edges(image):
     """Create a cartoon effect by combining strong edges with color reduction."""
@@ -117,8 +106,6 @@ def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
         return apply_pencil_sketch(image)
     elif filter_type == "oil_painting":
         return apply_oil_painting(image)
-    elif filter_type == "vignette":
-        return apply_vignette(image)
     elif filter_type == "cartoon_edges":
         return apply_cartoon_edges(image)
     elif filter_type == "black_and_white":
