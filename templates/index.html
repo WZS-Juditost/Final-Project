@@ -3,99 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-time Image Processing</title>
+    <title>Image Processing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #resultImage {
+            max-width: 100%;
+            border: 1px solid black;
+            margin-top: 20px;
+            display: none;
+        }
+        #errorMessage {
+            color: red;
+            margin-top: 20px;
+        }
+        #loading {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Real-time Image Processing</h1>
+    <h1>Image Processing</h1>
     <form id="imageForm" enctype="multipart/form-data">
         <label for="image">Choose an image:</label>
-        <input type="file" id="image" accept="image/*" required>
+        <input type="file" id="image" name="image" accept="image/*" required>
         <br><br>
 
         <label for="brightness">Brightness:</label>
-        <input type="range" id="brightness" min="-100" max="100" value="0">
+        <input type="range" id="brightness" name="brightness" min="-100" max="100" value="0">
         <span id="brightnessValue">0</span>
         <br><br>
 
         <label for="contrast">Contrast:</label>
-        <input type="range" id="contrast" min="-100" max="100" value="0">
+        <input type="range" id="contrast" name="contrast" min="-100" max="100" value="0">
         <span id="contrastValue">0</span>
         <br><br>
 
         <label for="saturation">Saturation:</label>
-        <input type="range" id="saturation" min="0.0" max="3.0" step="0.1" value="1.0">
+        <input type="range" id="saturation" name="saturation" min="0.0" max="3.0" step="0.1" value="1.0">
         <span id="saturationValue">1.0</span>
         <br><br>
 
         <label for="filter">Select Filter:</label>
-        <select id="filter">
+        <select id="filter" name="filter">
             <option value="">None</option>
             <option value="sepia">Sepia</option>
             <option value="pencil_sketch">Pencil Sketch</option>
             <option value="oil_painting">Oil Painting</option>
-            <option value="vignette">Vignette</option>
             <option value="cartoon_edges">Cartoon Edges</option>
             <option value="black_and_white">Black & White</option>
             <option value="cartoon">Cartoonize</option>
         </select>
         <br><br>
+
+        <button type="button" id="processButton">Upload and Process</button>
     </form>
 
-    <h2>Preview:</h2>
-    <img id="previewImage" alt="Preview will appear here" style="max-width: 100%; border: 1px solid black;">
+    <div id="loading">Processing your image, please wait...</div>
+    <div id="errorMessage"></div>
+    <h2>Result:</h2>
+    <img id="resultImage" alt="Processed image will appear here">
 
-    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <script>
-        const socket = io();
         const form = document.getElementById('imageForm');
-        const previewImage = document.getElementById('previewImage');
-        let uploadedImage = null;
+        const processButton = document.getElementById('processButton');
+        const resultImage = document.getElementById('resultImage');
+        const errorMessage = document.getElementById('errorMessage');
+        const loadingIndicator = document.getElementById('loading');
 
-        // Load image as base64
-        document.getElementById('image').addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    uploadedImage = reader.result; // Save the base64 image
-                    previewImage.src = uploadedImage; // Show the original image
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Update slider values
+        // Update slider values in real-time
         document.querySelectorAll('input[type="range"]').forEach(slider => {
-            slider.addEventListener('input', () => {
-                document.getElementById(slider.id + "Value").textContent = slider.value;
-                applyFilter();
+            slider.addEventListener('input', (event) => {
+                const valueSpan = document.getElementById(slider.id + "Value");
+                valueSpan.textContent = event.target.value;
             });
         });
 
-        // Update filter selection
-        document.getElementById('filter').addEventListener('change', applyFilter);
+        // Handle form submission
+        processButton.addEventListener('click', async () => {
+            errorMessage.textContent = '';
+            resultImage.style.display = 'none';
+            loadingIndicator.style.display = 'block';
 
-        // Apply the selected filter
-        function applyFilter() {
-            if (!uploadedImage) return;
+            const formData = new FormData(form);
 
-            const filter = document.getElementById('filter').value;
-            const brightness = document.getElementById('brightness').value;
-            const contrast = document.getElementById('contrast').value;
-            const saturation = document.getElementById('saturation').value;
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            socket.emit('apply_filter', {
-                image: uploadedImage,
-                filter,
-                brightness,
-                contrast,
-                saturation
-            });
-        }
-
-        // Receive filtered image
-        socket.on('filtered_image', (data) => {
-            previewImage.src = data.image; // Update the preview with the filtered image
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    resultImage.src = imageUrl;
+                    resultImage.style.display = 'block';
+                } else {
+                    const errorData = await response.json();
+                    errorMessage.textContent = errorData.error || 'An unknown error occurred.';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Failed to connect to the server.';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
         });
     </script>
 </body>

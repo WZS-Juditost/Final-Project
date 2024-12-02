@@ -1,14 +1,22 @@
 import cv2
 import numpy as np
 
-def kmeans_color_quantization(image, clusters=8):
-    data = image.reshape((-1, 3))
+def kmeans_color_quantization(image, clusters=8, downsample_scale=2):
+    # Downsample the image to reduce computation
+    small_image = cv2.resize(image, 
+                             (image.shape[1] // downsample_scale, image.shape[0] // downsample_scale))
+    data = small_image.reshape((-1, 3))
     data = np.float32(data)
+    
+    # Apply K-means
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
     _, labels, centers = cv2.kmeans(data, clusters, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     centers = np.uint8(centers)
     quantized = centers[labels.flatten()]
-    quantized_image = quantized.reshape(image.shape)
+    quantized_image = quantized.reshape(small_image.shape)
+    
+    # Upsample back to the original size
+    quantized_image = cv2.resize(quantized_image, (image.shape[1], image.shape[0]))
     return quantized_image
 
 def adjust_gamma(image, gamma=1.0):
@@ -99,39 +107,32 @@ def apply_cartoon_edges(image):
 def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
     """
     Apply various filters based on the filter_type parameter.
+    Preprocess the image with brightness, contrast, and saturation adjustments.
     """
+    # Adjust brightness, contrast, and saturation first
+    adjusted_image = adjust_brightness_contrast(image, brightness, contrast)
+    adjusted_image = adjust_saturation(adjusted_image, saturation)
+
     if filter_type == "sepia":
-        return apply_sepia(image)
+        return apply_sepia(adjusted_image)
     elif filter_type == "pencil_sketch":
-        return apply_pencil_sketch(image)
+        return apply_pencil_sketch(adjusted_image)
     elif filter_type == "oil_painting":
-        return apply_oil_painting(image)
+        return apply_oil_painting(adjusted_image)
     elif filter_type == "cartoon_edges":
-        return apply_cartoon_edges(image)
+        return apply_cartoon_edges(adjusted_image)
     elif filter_type == "black_and_white":
-        return process_black_and_white(image, brightness, contrast)
+        return convert_to_black_and_white(adjusted_image)
     elif filter_type == "cartoon":
-        return process_cartoonization(image, brightness, contrast, saturation)
+        return process_cartoonization(adjusted_image)
     else:
-        return image
+        return adjusted_image
 
-def process_black_and_white(image, brightness=0, contrast=0):
-    """
-    Process the image to convert it to black and white.
-    """
-    adjusted = adjust_brightness_contrast(image, brightness, contrast)
-    bw_image = convert_to_black_and_white(adjusted)
-    return bw_image
-
-def process_cartoonization(image, brightness=0, contrast=0, saturation=1.0):
+def process_cartoonization(image):
     """
     Process the image to apply cartoonization effects.
     """
-
-    adjusted_brightness_contrast = adjust_brightness_contrast(image, brightness, contrast)
-    adjusted_saturation = adjust_saturation(adjusted_brightness_contrast, saturation)
-
-    gamma_corrected = adjust_gamma(adjusted_saturation, gamma=1.5)
+    gamma_corrected = adjust_gamma(image, gamma=1.5)
     gray = cv2.cvtColor(gamma_corrected, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     edges = cv2.Canny(blurred, threshold1=50, threshold2=150)
@@ -143,7 +144,7 @@ def process_cartoonization(image, brightness=0, contrast=0, saturation=1.0):
     alpha = 0.8
     beta = 0.2
     cartoonized_img = cv2.addWeighted(blurred_background, alpha, edges_inv_colored, beta, 0)
-    
+
     return cartoonized_img
 
 def process_image(image_path, output_path, max_width=1200, max_height=1200,

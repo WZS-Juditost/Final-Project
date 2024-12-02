@@ -1,49 +1,57 @@
-from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit
+from flask import Flask, request, send_file, jsonify, render_template
 import os
-import cv2
-import base64
-import numpy as np
-from simple_cartoonize_image import apply_filter
+import imghdr
+from simple_cartoonize_image import process_image, apply_filter
 
 app = Flask(__name__)
-socketio = SocketIO(app)
 UPLOAD_FOLDER = "uploads"
+RESULT_FOLDER = "results"
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(RESULT_FOLDER, exist_ok=True)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['RESULT_FOLDER'] = RESULT_FOLDER
 
 @app.route('/')
 def home():
-    return render_template('index_realtime.html')
+    return render_template('index.html')
 
-@socketio.on('apply_filter')
-def handle_filter(data):
-    """
-    Handle the filter application request.
-    """
-    # Decode the image data
-    img_data = data.get('image')
-    filter_type = data.get('filter')
-    brightness = int(data.get('brightness', 0))
-    contrast = int(data.get('contrast', 0))
-    saturation = float(data.get('saturation', 1.0))
+@app.route('/convert', methods=['POST'])
+def cartoonize():
+    if 'image' not in request.files:
+        return jsonify({"error": "No image uploaded"}), 400
 
-    # Convert the base64 string back to an image
-    img_bytes = base64.b64decode(img_data.split(',')[1])
-    img_array = np.frombuffer(img_bytes, dtype=np.uint8)
-    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({"error": "No image selected"}), 400
 
-    # Apply the selected filter
-    if filter_type:
-        processed_img = apply_filter(img, filter_type, brightness, contrast, saturation)
-    else:
-        processed_img = img
+    # Save uploaded file
+    input_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(input_path)
 
-    # Encode the processed image back to base64
-    _, buffer = cv2.imencode('.jpg', processed_img)
-    processed_img_base64 = base64.b64encode(buffer).decode('utf-8')
+    # Validate file type
+    if not imghdr.what(input_path):
+        os.remove(input_path)
+        return jsonify({"error": "Uploaded file is not a valid image"}), 400
 
-    # Send the processed image back to the client
-    emit('filtered_image', {'image': f"data:image/jpeg;base64,{processed_img_base64}"})
+    # Get processing options from form
+    filter_type = request.form.get('filter', '')
+    brightness = int(request.form.get('brightness', 0))
+    contrast = int(request.form.get('contrast', 0))
+    saturation = float(request.form.get('saturation', 1.0))
+
+    # Define output path
+    output_path = os.path.join(app.config['RESULT_FOLDER'], f"processed_{file.filename}")
+
+    try:
+        # Process the image using the selected filter
+        process_image(input_path, output_path, brightness=brightness, contrast=contrast, saturation=saturation,
+                      filter_type=filter_type)
+    except Exception as e:
+        return jsonify({"error": f"Failed to process image: {str(e)}"}), 500
+
+    return send_file(output_path, mimetype='image/jpeg')
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
