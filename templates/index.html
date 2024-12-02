@@ -15,7 +15,6 @@
             max-width: 100%;
             border: 1px solid black;
             margin-top: 20px;
-            display: none;
         }
         #errorMessage {
             color: red;
@@ -24,6 +23,10 @@
         #loading {
             display: none;
             margin-top: 20px;
+        }
+        #downloadButton {
+            margin-top: 20px;
+            display: none;
         }
     </style>
 </head>
@@ -55,28 +58,30 @@
             <option value="sepia">Sepia</option>
             <option value="pencil_sketch">Pencil Sketch</option>
             <option value="oil_painting">Oil Painting</option>
-            <option value="cartoon_edges">Cartoon Edges</option>
             <option value="black_and_white">Black & White</option>
             <option value="cartoon">Cartoonize</option>
         </select>
         <br><br>
 
-        <button type="button" id="processButton">Upload and Process</button>
+        <button type="button" id="processButton">Process</button>
     </form>
 
     <div id="loading">Processing your image, please wait...</div>
     <div id="errorMessage"></div>
+
     <h2>Result:</h2>
-    <img id="resultImage" alt="Processed image will appear here">
+    <img id="resultImage" alt="Processed image will appear here" style="display: none;">
+    <br><br>
+    <button id="downloadButton" style="display: none;">Download Image</button>
 
     <script>
         const form = document.getElementById('imageForm');
         const processButton = document.getElementById('processButton');
+        const downloadButton = document.getElementById('downloadButton');
         const resultImage = document.getElementById('resultImage');
         const errorMessage = document.getElementById('errorMessage');
         const loadingIndicator = document.getElementById('loading');
 
-        // Update slider values in real-time
         document.querySelectorAll('input[type="range"]').forEach(slider => {
             slider.addEventListener('input', (event) => {
                 const valueSpan = document.getElementById(slider.id + "Value");
@@ -84,10 +89,10 @@
             });
         });
 
-        // Handle form submission
         processButton.addEventListener('click', async () => {
             errorMessage.textContent = '';
             resultImage.style.display = 'none';
+            downloadButton.style.display = 'none';
             loadingIndicator.style.display = 'block';
 
             const formData = new FormData(form);
@@ -103,6 +108,8 @@
                     const imageUrl = URL.createObjectURL(blob);
                     resultImage.src = imageUrl;
                     resultImage.style.display = 'block';
+                    resultImage.dataset.downloadUrl = imageUrl;
+                    downloadButton.style.display = 'block';
                 } else {
                     const errorData = await response.json();
                     errorMessage.textContent = errorData.error || 'An unknown error occurred.';
@@ -111,6 +118,25 @@
                 errorMessage.textContent = 'Failed to connect to the server.';
             } finally {
                 loadingIndicator.style.display = 'none';
+            }
+        });
+
+        downloadButton.addEventListener('click', () => {
+            const downloadUrl = resultImage.dataset.downloadUrl;
+
+            if (downloadUrl) {
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+
+                const filename = 'processed_image.jpeg';
+                a.download = filename;
+
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(downloadUrl);
+            } else {
+                errorMessage.textContent = 'No image available to download.';
             }
         });
     </script>

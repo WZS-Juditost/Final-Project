@@ -1,22 +1,17 @@
 import cv2
 import numpy as np
+from sklearn.cluster import MiniBatchKMeans
 
-def kmeans_color_quantization(image, clusters=8, downsample_scale=2):
-    # Downsample the image to reduce computation
-    small_image = cv2.resize(image, 
-                             (image.shape[1] // downsample_scale, image.shape[0] // downsample_scale))
-    data = small_image.reshape((-1, 3))
-    data = np.float32(data)
+def kmeans_color_quantization(image, clusters=8, batch_size=100):
+    data = image.reshape((-1, 3))
     
-    # Apply K-means
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
-    _, labels, centers = cv2.kmeans(data, clusters, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
-    centers = np.uint8(centers)
-    quantized = centers[labels.flatten()]
-    quantized_image = quantized.reshape(small_image.shape)
+    # Apply MiniBatchKMeans
+    kmeans = MiniBatchKMeans(n_clusters=clusters, batch_size=batch_size)
+    labels = kmeans.fit_predict(data)
+    centers = np.uint8(kmeans.cluster_centers_)
     
-    # Upsample back to the original size
-    quantized_image = cv2.resize(quantized_image, (image.shape[1], image.shape[0]))
+    quantized = centers[labels]
+    quantized_image = quantized.reshape(image.shape)
     return quantized_image
 
 def adjust_gamma(image, gamma=1.0):
@@ -94,16 +89,6 @@ def apply_oil_painting(image, size=7, dyn_ratio=1):
     oil_painting = cv2.xphoto.oilPainting(image, size, dyn_ratio)
     return oil_painting
 
-
-def apply_cartoon_edges(image):
-    """Create a cartoon effect by combining strong edges with color reduction."""
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.medianBlur(gray, 5)
-    edges = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 10)
-    color = cv2.bilateralFilter(image, d=9, sigmaColor=300, sigmaSpace=300)
-    cartoon_image = cv2.bitwise_and(color, color, mask=edges)
-    return cartoon_image
-
 def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
     """
     Apply various filters based on the filter_type parameter.
@@ -119,8 +104,6 @@ def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
         return apply_pencil_sketch(adjusted_image)
     elif filter_type == "oil_painting":
         return apply_oil_painting(adjusted_image)
-    elif filter_type == "cartoon_edges":
-        return apply_cartoon_edges(adjusted_image)
     elif filter_type == "black_and_white":
         return convert_to_black_and_white(adjusted_image)
     elif filter_type == "cartoon":
