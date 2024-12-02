@@ -4,8 +4,6 @@ from sklearn.cluster import MiniBatchKMeans
 
 def kmeans_color_quantization(image, clusters=8, batch_size=100):
     data = image.reshape((-1, 3))
-    
-    # Apply MiniBatchKMeans
     kmeans = MiniBatchKMeans(n_clusters=clusters, batch_size=batch_size)
     labels = kmeans.fit_predict(data)
     centers = np.uint8(kmeans.cluster_centers_)
@@ -110,6 +108,59 @@ def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
         return process_cartoonization(adjusted_image)
     else:
         return adjusted_image
+    
+def remove_noise(image, h=10):
+    """
+    Remove noise from the image using Non-Local Means Denoising.
+    h: Parameter controlling filter strength. Higher h removes more noise.
+    """
+    denoised = cv2.fastNlMeansDenoisingColored(image, None, h, h, 7, 21)
+    return denoised
+
+def sharpen_image(image):
+    """
+    Apply sharpening filter to the image.
+    """
+    kernel = np.array([[0, -1, 0],
+                       [-1, 5, -1],
+                       [0, -1, 0]])
+    sharpened = cv2.filter2D(image, -1, kernel)
+    return sharpened
+
+def smooth_image(image, kernel_size=5):
+    """
+    Apply Gaussian blur to smooth the image.
+    kernel_size: Size of the Gaussian kernel.
+    """
+    smoothed = cv2.GaussianBlur(image, (kernel_size, kernel_size), 0)
+    return smoothed
+
+def equalize_color(image):
+    """
+    Apply histogram equalization to improve color balance.
+    """
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hsv[:, :, 2] = cv2.equalizeHist(hsv[:, :, 2])  # Equalize only the V channel
+    balanced = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    return balanced
+
+
+def enhance_image(image, enhancements):
+    """
+    Apply image enhancement operations in sequence.
+    enhancements: List of enhancement operations, e.g., ['denoise', 'sharpen'].
+    """
+    for enhancement in enhancements:
+        if enhancement == "denoise":
+            image = remove_noise(image)
+        elif enhancement == "sharpen":
+            image = sharpen_image(image)
+        elif enhancement == "smooth":
+            image = smooth_image(image)
+        elif enhancement == "color_balance":
+            image = equalize_color(image)
+    return image
+
 
 def process_cartoonization(image):
     """
@@ -131,20 +182,28 @@ def process_cartoonization(image):
     return cartoonized_img
 
 def process_image(image_path, output_path, max_width=1200, max_height=1200,
-                  brightness=0, contrast=0, saturation=1.0, filter_type=None):
+                  brightness=0, contrast=0, saturation=1.0,
+                  enhancements=None, filter_type=None):
     """
-    Process the image with optional resizing and filter application.
+    Process the image with enhancements and filter application.
     """
     img = cv2.imread(image_path)
     if img is None:
         print("Unable to read the image. Please check the path!")
         return
 
+    # Resize the image
     resized_img = resize_image_proportionally(img, max_width, max_height)
-    processed_img = resized_img
 
+    # Apply enhancements
+    if enhancements:
+        resized_img = enhance_image(resized_img, enhancements)
+
+    # Apply filter
     if filter_type:
         processed_img = apply_filter(resized_img, filter_type, brightness, contrast, saturation)
+    else:
+        processed_img = resized_img
 
     cv2.imwrite(output_path, processed_img)
     print(f"Processed image saved at {output_path}")

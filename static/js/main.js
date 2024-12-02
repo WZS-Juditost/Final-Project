@@ -20,6 +20,13 @@ processButton.addEventListener('click', async () => {
 
     const formData = new FormData(form);
 
+    // Collect selected enhancements
+    const enhancements = [];
+    document.querySelectorAll('input[name="enhancements"]:checked').forEach(input => {
+        enhancements.push(input.value);
+    });
+    formData.append('enhancements', JSON.stringify(enhancements));
+
     try {
         const response = await fetch('/convert', {
             method: 'POST',

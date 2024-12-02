@@ -2,6 +2,7 @@ from flask import Flask, request, send_file, jsonify, render_template
 import os
 import shutil
 import imghdr
+import json
 from simple_cartoonize_image import process_image
 
 app = Flask(__name__)
@@ -39,13 +40,16 @@ def cartoonize():
     contrast = int(request.form.get('contrast', 0))
     saturation = float(request.form.get('saturation', 1.0))
 
+    # Parse enhancements
+    enhancements = request.form.get('enhancements', '[]')
+    enhancements = json.loads(enhancements)
+
     output_path = os.path.join(app.config['RESULT_FOLDER'], f"processed_{file.filename}")
 
     try:
-        process_image(input_path, output_path, brightness=brightness, contrast=contrast, saturation=saturation,
-                      filter_type=filter_type)
+        process_image(input_path, output_path, brightness=brightness, contrast=contrast,
+                      saturation=saturation, enhancements=enhancements, filter_type=filter_type)
 
-        # Return the processed image as a file download
         return send_file(output_path, mimetype='image/jpeg', as_attachment=True, 
                          download_name=f"processed_{file.filename}")
     except Exception as e:
