@@ -63,6 +63,71 @@ def resize_image_proportionally(image, max_width, max_height):
     resized_image = cv2.resize(image, (new_width, new_height))
     return resized_image
 
+def apply_sepia(image):
+    """Apply a sepia tone to the image."""
+    kernel = np.array([[0.272, 0.534, 0.131],
+                       [0.349, 0.686, 0.168],
+                       [0.393, 0.769, 0.189]])
+    sepia_image = cv2.transform(image, kernel)
+    sepia_image = np.clip(sepia_image, 0, 255).astype(np.uint8)
+    return sepia_image
+
+def apply_pencil_sketch(image):
+    """Convert the image to a pencil sketch."""
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    inverted = cv2.bitwise_not(gray_image)
+    blurred = cv2.GaussianBlur(inverted, (21, 21), 0)
+    inverted_blurred = cv2.bitwise_not(blurred)
+    sketch_image = cv2.divide(gray_image, inverted_blurred, scale=256.0)
+    return cv2.cvtColor(sketch_image, cv2.COLOR_GRAY2BGR)
+
+def apply_oil_painting(image, size=7, dyn_ratio=1):
+    """Apply an oil painting effect to the image."""
+    oil_painting = cv2.xphoto.oilPainting(image, size, dyn_ratio)
+    return oil_painting
+
+def apply_vignette(image, strength=0.5):
+    """Apply a vignette effect to the image."""
+    rows, cols = image.shape[:2]
+    kernel_x = cv2.getGaussianKernel(cols, cols * strength)
+    kernel_y = cv2.getGaussianKernel(rows, rows * strength)
+    kernel = kernel_y @ kernel_x.T
+    mask = kernel / kernel.max()
+    vignette_image = np.zeros_like(image)
+    for i in range(3):  # Apply the mask to each channel
+        vignette_image[:, :, i] = image[:, :, i] * mask
+    return vignette_image
+
+def apply_cartoon_edges(image):
+    """Create a cartoon effect by combining strong edges with color reduction."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.medianBlur(gray, 5)
+    edges = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 10)
+    color = cv2.bilateralFilter(image, d=9, sigmaColor=300, sigmaSpace=300)
+    cartoon_image = cv2.bitwise_and(color, color, mask=edges)
+    return cartoon_image
+
+def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
+    """
+    Apply various filters based on the filter_type parameter.
+    """
+    if filter_type == "sepia":
+        return apply_sepia(image)
+    elif filter_type == "pencil_sketch":
+        return apply_pencil_sketch(image)
+    elif filter_type == "oil_painting":
+        return apply_oil_painting(image)
+    elif filter_type == "vignette":
+        return apply_vignette(image)
+    elif filter_type == "cartoon_edges":
+        return apply_cartoon_edges(image)
+    elif filter_type == "black_and_white":
+        return process_black_and_white(image, brightness, contrast)
+    elif filter_type == "cartoon":
+        return process_cartoonization(image, brightness, contrast, saturation)
+    else:
+        return image
+
 def process_black_and_white(image, brightness=0, contrast=0):
     """
     Process the image to convert it to black and white.
@@ -95,38 +160,34 @@ def process_cartoonization(image, brightness=0, contrast=0, saturation=1.0):
     return cartoonized_img
 
 def process_image(image_path, output_path, max_width=1200, max_height=1200,
-                  brightness=0, contrast=0, saturation=1.0,
-                  apply_cartoon=False, apply_bw=False):
+                  brightness=0, contrast=0, saturation=1.0, filter_type=None):
     """
-    Main function to process an image, applying optional cartoonization and/or black-and-white conversion.
+    Process the image with optional resizing and filter application.
     """
     img = cv2.imread(image_path)
     if img is None:
         print("Unable to read the image. Please check the path!")
         return
 
-
     resized_img = resize_image_proportionally(img, max_width, max_height)
+    processed_img = resized_img
 
-    if apply_cartoon:
-        processed_img = process_cartoonization(resized_img, brightness, contrast, saturation)
-    else:
-        processed_img = resized_img
-    if apply_bw:
-        processed_img = process_black_and_white(processed_img, brightness, contrast)
+    if filter_type:
+        processed_img = apply_filter(resized_img, filter_type, brightness, contrast, saturation)
 
     cv2.imwrite(output_path, processed_img)
     print(f"Processed image saved at {output_path}")
 
-
 if __name__ == "__main__":
     input_path = "image/2.jpg"
+    output_path_sepia = "output_sepia.jpg"
+    output_path_sketch = "output_pencil_sketch.jpg"
+    output_path_oil = "output_oil_painting.jpg"
     output_path_bw = "output_black_and_white.jpg"
     output_path_cartoon = "output_cartoon.jpg"
-    output_path_combined = "output_combined.jpg"
 
-    process_image(input_path, output_path_bw, brightness=20, contrast=10, apply_bw=True)
-    process_image(input_path, output_path_cartoon, brightness=30, contrast=20, saturation=1.5, apply_cartoon=True)
-    process_image(input_path, output_path_combined, brightness=30, contrast=20, saturation=1.5,
-                  apply_cartoon=True, apply_bw=True)
-
+    process_image(input_path, output_path_sepia, filter_type="sepia")
+    process_image(input_path, output_path_sketch, filter_type="pencil_sketch")
+    process_image(input_path, output_path_oil, filter_type="oil_painting")
+    process_image(input_path, output_path_bw, filter_type="black_and_white", brightness=20, contrast=10)
+    process_image(input_path, output_path_cartoon, filter_type="cartoon", brightness=20, contrast=20, saturation=1.5)
