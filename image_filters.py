@@ -60,10 +60,64 @@ def process_cartoonization(image):
 
     return cartoonized_img
 
+def apply_hdr_effect(image):
+    """
+    Apply HDR effect to the image.
+    """
+    hdr = cv2.detailEnhance(image, sigma_s=12, sigma_r=0.15)
+    return hdr
+
+def apply_dslr_blur(image, focus_area=None, blur_strength=21):
+    """
+    Apply DSLR-like blur effect with a circular focus area and gradual blur transitions.
+    
+    focus_area: A tuple (cx, cy, r) defining the center (cx, cy) and radius (r) of the focus area.
+    blur_strength: Strength of the Gaussian blur applied to the background.
+    """
+    height, width = image.shape[:2]
+    if focus_area is None:
+        focus_area = (width // 2, height // 2, min(width, height) // 4)
+
+    cx, cy, radius = focus_area
+    mask = np.zeros((height, width), dtype=np.uint8)
+    cv2.circle(mask, (cx, cy), radius, 255, -1)
+    blurred_mask = cv2.GaussianBlur(mask, (2 * blur_strength + 1, 2 * blur_strength + 1), 0)
+    normalized_mask = blurred_mask.astype(np.float32) / 255.0
+    blurred_image = cv2.GaussianBlur(image, (blur_strength, blur_strength), 0)
+    sharp_focus = image.astype(np.float32) * normalized_mask[..., None]
+    blurred_background = blurred_image.astype(np.float32) * (1 - normalized_mask[..., None])
+    final_image = sharp_focus + blurred_background
+    final_image = np.clip(final_image, 0, 255).astype(np.uint8)
+
+    return final_image
+
+def apply_glitch_effect(image, intensity=10):
+    """
+    Apply a glitch effect to the image.
+    intensity: How many rows/columns to shift for the glitch.
+    """
+    height, width = image.shape[:2]
+    glitch_image = image.copy()
+
+    for i in range(0, height, intensity):
+        shift = np.random.randint(-intensity, intensity)
+        glitch_image[i:i+intensity, :] = np.roll(image[i:i+intensity, :], shift, axis=1)
+    
+    return glitch_image
+
+def apply_pixelation(image, pixel_size=10):
+    """
+    Apply pixelation effect to the image.
+    pixel_size: Size of each pixel block.
+    """
+    height, width = image.shape[:2]
+    small_image = cv2.resize(image, (width // pixel_size, height // pixel_size), interpolation=cv2.INTER_NEAREST)
+    pixelated_image = cv2.resize(small_image, (width, height), interpolation=cv2.INTER_NEAREST)
+    return pixelated_image
+
 def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
     """
     Apply various filters based on the filter_type parameter.
-    Preprocess the image with brightness, contrast, and saturation adjustments.
     """
     adjusted_image = adjust_brightness_contrast(image, brightness, contrast)
     adjusted_image = adjust_saturation(adjusted_image, saturation)
@@ -78,5 +132,14 @@ def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
         return convert_to_black_and_white(adjusted_image)
     elif filter_type == "cartoon":
         return process_cartoonization(adjusted_image)
+    elif filter_type == "hdr":
+        return apply_hdr_effect(adjusted_image)
+    elif filter_type == "dslr_blur":
+        return apply_dslr_blur(adjusted_image)
+    elif filter_type == "glitch":
+        return apply_glitch_effect(adjusted_image)
+    elif filter_type == "pixelation":
+        return apply_pixelation(adjusted_image)
     else:
         return adjusted_image
+
