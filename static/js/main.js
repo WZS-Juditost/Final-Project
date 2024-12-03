@@ -4,6 +4,8 @@ const downloadButton = document.getElementById('downloadButton');
 const resultImage = document.getElementById('resultImage');
 const errorMessage = document.getElementById('errorMessage');
 const loadingIndicator = document.getElementById('loading');
+const autoOptimizeCheckbox = document.getElementById('auto-optimize');
+const enhancementOptions = document.querySelectorAll('.enhancement-option');
 
 document.querySelectorAll('input[type="range"]').forEach(slider => {
     slider.addEventListener('input', (event) => {
@@ -69,3 +71,23 @@ downloadButton.addEventListener('click', () => {
         errorMessage.textContent = 'No image available to download.';
     }
 });
+
+autoOptimizeCheckbox.addEventListener('change', (event) => {
+    if (event.target.checked) {
+        enhancementOptions.forEach(option => {
+            option.disabled = true;
+        });
+    } else {
+        enhancementOptions.forEach(option => {
+            option.disabled = false;
+        });
+    }
+});
+
+enhancementOptions.forEach(option => {
+    option.addEventListener('change', () => {
+        const anyChecked = Array.from(enhancementOptions).some(opt => opt.checked);
+        autoOptimizeCheckbox.disabled = anyChecked;
+    });
+});
+

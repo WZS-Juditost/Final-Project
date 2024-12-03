@@ -3,7 +3,7 @@ import os
 import shutil
 import imghdr
 import json
-from simple_cartoonize_image import process_image
+from main import process_image
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
