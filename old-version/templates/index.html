@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #resultImage {
+            max-width: 100%;
+            border: 1px solid black;
+            margin-top: 20px;
+        }
+        #errorMessage {
+            color: red;
+            margin-top: 20px;
+        }
+        #loading {
+            display: none;
+            margin-top: 20px;
+        }
+        #downloadButton {
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Processing</h1>
+    <form id="imageForm" enctype="multipart/form-data">
+        <label for="image">Choose an image:</label>
+        <input type="file" id="image" name="image" accept="image/*" required>
+        <br><br>
+
+        <label for="brightness">Brightness:</label>
+        <input type="range" id="brightness" name="brightness" min="-100" max="100" value="0">
+        <span id="brightnessValue">0</span>
+        <br><br>
+
+        <label for="contrast">Contrast:</label>
+        <input type="range" id="contrast" name="contrast" min="-100" max="100" value="0">
+        <span id="contrastValue">0</span>
+        <br><br>
+
+        <label for="saturation">Saturation:</label>
+        <input type="range" id="saturation" name="saturation" min="0.0" max="3.0" step="0.1" value="1.0">
+        <span id="saturationValue">1.0</span>
+        <br><br>
+
+        <label for="filter">Select Filter:</label>
+        <select id="filter" name="filter">
+            <option value="">None</option>
+            <option value="sepia">Sepia</option>
+            <option value="pencil_sketch">Pencil Sketch</option>
+            <option value="oil_painting">Oil Painting</option>
+            <option value="black_and_white">Black & White</option>
+            <option value="cartoon">Cartoonize</option>
+            <option value="hdr">HDR Effect</option>
+            <option value="dslr_blur">DSLR Blur</option>
+            <option value="glitch">Glitch</option>
+            <option value="pixelation">Pixelation</option>
+        </select>
+        <br><br>
+
+        <button type="button" id="processButton">Process</button>
+    </form>
+
+    <div id="loading">Processing your image, please wait...</div>
+    <div id="errorMessage"></div>
+
+    <h2>Result:</h2>
+    <img id="resultImage" alt="Processed image will appear here" style="display: none;">
+    <br><br>
+    <button id="downloadButton" style="display: none;">Download Image</button>
+
+    <h3>Enhance Image:</h3>
+    <label>
+        <input type="checkbox" name="enhancements" value="denoise" class="enhancement-option"> Denoise
+    </label><br>
+    <label>
+        <input type="checkbox" name="enhancements" value="sharpen" class="enhancement-option"> Sharpen
+    </label><br>
+    <label>
+        <input type="checkbox" name="enhancements" value="smooth" class="enhancement-option"> Smooth
+    </label><br>
+    <label>
+        <input type="checkbox" name="enhancements" value="color_balance" class="enhancement-option"> Color Balance
+    </label><br>
+    <label>
+        <input type="checkbox" name="enhancements" value="auto_optimize" id="auto-optimize"> Auto Optimize
+    </label><br>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
