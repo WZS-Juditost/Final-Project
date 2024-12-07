@@ -1,6 +1,3 @@
-Here's a **README.md** file for your image processing project:
-
-```markdown
 # Image Processing Web Application
 
 A Django-based web application for processing and enhancing images. This application allows users to upload images, apply various filters and enhancements, and download the processed images.
