@@ -1,5 +1,3 @@
-Here's a **README.md** file for your image processing project:
-
 ```markdown
 # Image Processing Web Application
 
