@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 
+
 def kmeans_color_quantization(image, clusters=8, batch_size=4096):
     """
     Reduce the number of colors in the image using k-means clustering.
@@ -23,13 +24,17 @@ def kmeans_color_quantization(image, clusters=8, batch_size=4096):
         numpy.ndarray: The quantized image with reduced colors.
     """
     data = image.reshape((-1, 3))
-    kmeans = MiniBatchKMeans(n_clusters=clusters, batch_size=batch_size, n_init=3)
+    kmeans = MiniBatchKMeans(
+        n_clusters=clusters,
+        batch_size=batch_size,
+        n_init=3)
     labels = kmeans.fit_predict(data)
     centers = kmeans.cluster_centers_.astype("uint8")
-    
+
     quantized = centers[labels]
     quantized_image = quantized.reshape(image.shape)
     return quantized_image
+
 
 def apply_background_blur(image, edges, blur_strength=15):
     """
@@ -45,9 +50,11 @@ def apply_background_blur(image, edges, blur_strength=15):
     """
     mask = cv2.bitwise_not(edges)
     mask_colored = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-    blurred_background = cv2.GaussianBlur(image, (blur_strength, blur_strength), 0)
+    blurred_background = cv2.GaussianBlur(
+        image, (blur_strength, blur_strength), 0)
     blended = np.where(mask_colored == 0, blurred_background, image)
     return blended
+
 
 def resize_image_proportionally(image, max_width, max_height):
     """

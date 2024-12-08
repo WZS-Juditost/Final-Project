@@ -10,6 +10,7 @@ Date: 2024-12-02
 import cv2
 import numpy as np
 
+
 def adjust_gamma(image, gamma=1.0):
     """
     Adjust the gamma value of the image to brighten or darken it.
@@ -22,8 +23,10 @@ def adjust_gamma(image, gamma=1.0):
         numpy.ndarray: The gamma-adjusted image.
     """
     inv_gamma = 1.0 / gamma
-    table = np.array([(i / 255.0) ** inv_gamma * 255 for i in np.arange(256)]).astype("uint8")
+    table = np.array([(i / 255.0) ** inv_gamma *
+                     255 for i in np.arange(256)]).astype("uint8")
     return cv2.LUT(image, table)
+
 
 def adjust_brightness_contrast(image, brightness=0, contrast=0):
     """
@@ -42,6 +45,7 @@ def adjust_brightness_contrast(image, brightness=0, contrast=0):
     adjusted = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
     return adjusted
 
+
 def adjust_saturation(image, saturation_scale=1.0):
     """
     Adjust the saturation of the image.
@@ -58,6 +62,7 @@ def adjust_saturation(image, saturation_scale=1.0):
     saturated_image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
     return saturated_image
 
+
 def remove_noise(image, h=10):
     """
     Remove noise from the image using Non-Local Means Denoising.
@@ -71,6 +76,7 @@ def remove_noise(image, h=10):
     """
     denoised = cv2.fastNlMeansDenoisingColored(image, None, h, h, 7, 21)
     return denoised
+
 
 def sharpen_image(image):
     """
@@ -91,9 +97,11 @@ def sharpen_image(image):
                        [0, -0.5, 0]])
     sharpened = cv2.filter2D(denoised, -1, kernel)
     mask = cv2.cvtColor(edges_inv, cv2.COLOR_GRAY2BGR) / 255.0
-    final_image = cv2.addWeighted(image, 0.7, sharpened, 0.3, 0) * mask + image * (1 - mask)
+    final_image = cv2.addWeighted(
+        image, 0.7, sharpened, 0.3, 0) * mask + image * (1 - mask)
     final_image = np.clip(final_image, 0, 255).astype(np.uint8)
     return final_image
+
 
 def smooth_image(image, kernel_size=5):
     """
@@ -108,6 +116,7 @@ def smooth_image(image, kernel_size=5):
     """
     smoothed = cv2.GaussianBlur(image, (kernel_size, kernel_size), 0)
     return smoothed
+
 
 def equalize_color(image):
     """
@@ -125,6 +134,7 @@ def equalize_color(image):
     hsv[:, :, 1] = cv2.multiply(hsv[:, :, 1], 0.9)
     balanced = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
     return balanced
+
 
 def auto_optimize_image(image):
     """
@@ -149,15 +159,17 @@ def auto_optimize_image(image):
     optimized_image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
     # Denoise
-    optimized_image = cv2.fastNlMeansDenoisingColored(optimized_image, None, 10, 10, 7, 21)
+    optimized_image = cv2.fastNlMeansDenoisingColored(
+        optimized_image, None, 10, 10, 7, 21)
     kernel = np.array([[0, -0.3, 0],
                        [-0.3, 2, -0.3],
                        [0, -0.3, 0]])
-    
+
     # Apply sharpening
     sharpened = cv2.filter2D(optimized_image, -1, kernel)
     optimized_image = cv2.addWeighted(optimized_image, 0.8, sharpened, 0.2, 0)
     return optimized_image
+
 
 def enhance_image(image, enhancements):
     """
@@ -165,7 +177,7 @@ def enhance_image(image, enhancements):
 
     Args:
         image (numpy.ndarray): The input image in BGR format.
-        enhancements (list of str): List of enhancements to apply. 
+        enhancements (list of str): List of enhancements to apply.
 
     Returns:
         numpy.ndarray: The enhanced image.

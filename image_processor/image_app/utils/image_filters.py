@@ -11,6 +11,7 @@ import numpy as np
 from .image_enhancements import *
 from .utilities import *
 
+
 def apply_sepia(image):
     """
     Apply a sepia tone to the image.
@@ -27,6 +28,7 @@ def apply_sepia(image):
     sepia_image = cv2.transform(image, kernel)
     sepia_image = np.clip(sepia_image, 0, 255).astype(np.uint8)
     return sepia_image
+
 
 def apply_pencil_sketch(image):
     """
@@ -45,6 +47,7 @@ def apply_pencil_sketch(image):
     sketch_image = cv2.divide(gray_image, inverted_blurred, scale=256.0)
     return cv2.cvtColor(sketch_image, cv2.COLOR_GRAY2BGR)
 
+
 def apply_oil_painting(image, size=7, dyn_ratio=1):
     """
     Apply an oil painting effect to the image.
@@ -60,6 +63,7 @@ def apply_oil_painting(image, size=7, dyn_ratio=1):
     oil_painting = cv2.xphoto.oilPainting(image, size, dyn_ratio)
     return oil_painting
 
+
 def convert_to_black_and_white(image):
     """
     Convert the image to black and white (grayscale).
@@ -72,6 +76,7 @@ def convert_to_black_and_white(image):
     """
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return cv2.cvtColor(gray_image, cv2.COLOR_GRAY2BGR)
+
 
 def process_cartoonization(image):
     """
@@ -87,16 +92,23 @@ def process_cartoonization(image):
     gray = cv2.cvtColor(gamma_corrected, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     edges = cv2.Canny(blurred, threshold1=50, threshold2=150)
-    color = cv2.bilateralFilter(gamma_corrected, d=9, sigmaColor=120, sigmaSpace=120)
+    color = cv2.bilateralFilter(
+        gamma_corrected,
+        d=9,
+        sigmaColor=120,
+        sigmaSpace=120)
     quantized = kmeans_color_quantization(color, clusters=20)
-    blurred_background = apply_background_blur(quantized, edges, blur_strength=21)
+    blurred_background = apply_background_blur(
+        quantized, edges, blur_strength=21)
     edges_inv = cv2.bitwise_not(edges)
     edges_inv_colored = cv2.cvtColor(edges_inv, cv2.COLOR_GRAY2BGR)
     alpha = 0.8
     beta = 0.2
-    cartoonized_img = cv2.addWeighted(blurred_background, alpha, edges_inv_colored, beta, 0)
+    cartoonized_img = cv2.addWeighted(
+        blurred_background, alpha, edges_inv_colored, beta, 0)
 
     return cartoonized_img
+
 
 def apply_hdr_effect(image):
     """
@@ -111,6 +123,7 @@ def apply_hdr_effect(image):
     image = remove_noise(image)
     hdr = cv2.detailEnhance(image, sigma_s=12, sigma_r=0.15)
     return hdr
+
 
 def apply_dslr_blur(image, focus_area=None, blur_strength=21):
     """
@@ -131,15 +144,18 @@ def apply_dslr_blur(image, focus_area=None, blur_strength=21):
     cx, cy, radius = focus_area
     mask = np.zeros((height, width), dtype=np.uint8)
     cv2.circle(mask, (cx, cy), radius, 255, -1)
-    blurred_mask = cv2.GaussianBlur(mask, (2 * blur_strength + 1, 2 * blur_strength + 1), 0)
+    blurred_mask = cv2.GaussianBlur(
+        mask, (2 * blur_strength + 1, 2 * blur_strength + 1), 0)
     normalized_mask = blurred_mask.astype(np.float32) / 255.0
     blurred_image = cv2.GaussianBlur(image, (blur_strength, blur_strength), 0)
     sharp_focus = image.astype(np.float32) * normalized_mask[..., None]
-    blurred_background = blurred_image.astype(np.float32) * (1 - normalized_mask[..., None])
+    blurred_background = blurred_image.astype(
+        np.float32) * (1 - normalized_mask[..., None])
     final_image = sharp_focus + blurred_background
     final_image = np.clip(final_image, 0, 255).astype(np.uint8)
 
     return final_image
+
 
 def apply_glitch_effect(image, intensity=10):
     """
@@ -157,9 +173,11 @@ def apply_glitch_effect(image, intensity=10):
 
     for i in range(0, height, intensity):
         shift = np.random.randint(-intensity, intensity)
-        glitch_image[i:i+intensity, :] = np.roll(image[i:i+intensity, :], shift, axis=1)
-    
+        glitch_image[i:i + intensity,
+                     :] = np.roll(image[i:i + intensity, :], shift, axis=1)
+
     return glitch_image
+
 
 def apply_pixelation(image, pixel_size=10):
     """
@@ -173,9 +191,15 @@ def apply_pixelation(image, pixel_size=10):
         numpy.ndarray: The pixelated image.
     """
     height, width = image.shape[:2]
-    small_image = cv2.resize(image, (width // pixel_size, height // pixel_size), interpolation=cv2.INTER_NEAREST)
-    pixelated_image = cv2.resize(small_image, (width, height), interpolation=cv2.INTER_NEAREST)
+    small_image = cv2.resize(
+        image,
+        (width // pixel_size,
+         height // pixel_size),
+        interpolation=cv2.INTER_NEAREST)
+    pixelated_image = cv2.resize(
+        small_image, (width, height), interpolation=cv2.INTER_NEAREST)
     return pixelated_image
+
 
 def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
     """
@@ -214,4 +238,3 @@ def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
         return apply_pixelation(adjusted_image)
     else:
         return adjusted_image
-

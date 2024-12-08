@@ -2,6 +2,7 @@ from .image_filters import *
 from .image_enhancements import *
 from .utilities import *
 
+
 def process_image(image_path, output_path, max_width=1200, max_height=1200,
                   brightness=0, contrast=0, saturation=1.0,
                   enhancements=None, filter_type=None):
@@ -32,7 +33,12 @@ def process_image(image_path, output_path, max_width=1200, max_height=1200,
     if enhancements:
         resized_img = enhance_image(resized_img, enhancements)
     if filter_type:
-        processed_img = apply_filter(resized_img, filter_type, brightness, contrast, saturation)
+        processed_img = apply_filter(
+            resized_img,
+            filter_type,
+            brightness,
+            contrast,
+            saturation)
     else:
         processed_img = resized_img
 
