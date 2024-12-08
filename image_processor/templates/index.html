@@ -1,6 +1,8 @@
 <!DOCTYPE html>
+{% extends 'base.html' %}
 <html lang="en">
 <head>
+    {% block title %}Image Processing{% endblock %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Processing</title>
@@ -121,6 +123,32 @@
             background-color: #45a049;
         }
 
+        .navbar {
+            background-color: #4CAF50;
+            padding: 10px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 18px;
+        }
+
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -133,6 +161,7 @@
     </style>
 </head>
 <body>
+    {% block content %}
     <h1>Image Processing</h1>
     <form id="imageForm" enctype="multipart/form-data">
         {% csrf_token %}
@@ -193,7 +222,7 @@
     <h2>Result:</h2>
     <img id="resultImage" alt="Processed image will appear here" style="display: none;">
     <button id="downloadButton" style="display: none;">Download Image</button>
-
+    {% endblock %}
     <script src="/static/js/main.js"></script>
 </body>
 </html>
