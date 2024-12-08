@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Image Processing Page Loaded");
 
         document.querySelectorAll('input[type="range"]').forEach(slider => {
+            // Update displayed value when slider is adjusted
             slider.addEventListener('input', (event) => {
                 const valueSpan = document.getElementById(slider.id + "Value");
                 valueSpan.textContent = event.target.value;
@@ -19,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         processButton.addEventListener('click', async () => {
+            // Reset error message, result image visibility
+            // Reset download button visibility
             errorMessage.textContent = '';
             resultImage.style.display = 'none';
             downloadButton.style.display = 'none';
@@ -26,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(form);
 
+            // Gather enhancement options
             const enhancements = [];
             document.querySelectorAll('input[name="enhancements"]:checked').forEach(input => {
                 enhancements.push(input.value);
@@ -33,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('enhancements', JSON.stringify(enhancements));
 
             try {
+                // Send image processing request to server
                 const response = await fetch('/convert', {
                     method: 'POST',
                     body: formData,
@@ -42,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.ok) {
+                    // Display processed image
                     const blob = await response.blob();
                     const imageUrl = URL.createObjectURL(blob);
                     resultImage.src = imageUrl;
@@ -49,24 +55,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     resultImage.dataset.downloadUrl = imageUrl;
                     downloadButton.style.display = 'block';
                 } else {
+                    // Display error message
                     const errorData = await response.json();
                     errorMessage.textContent = errorData.error || 'An unknown error occurred.';
                 }
             } catch (error) {
                 errorMessage.textContent = 'Failed to connect to the server.';
             } finally {
+                // Hide loading indicator
                 loadingIndicator.style.display = 'none';
             }
         });
 
         downloadButton.addEventListener('click', () => {
+            // Trigger download of processed image
             const downloadUrl = resultImage.dataset.downloadUrl;
 
             if (downloadUrl) {
                 const a = document.createElement('a');
                 a.href = downloadUrl;
 
-                const filename = 'processed_image.jpeg';
+                const filename = 'processed_image.jpg';
                 a.download = filename;
 
                 document.body.appendChild(a);
@@ -79,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         autoOptimizeCheckbox.addEventListener('change', (event) => {
+            // Enable or disable other enhancement options
+            // based on auto-optimize checkbox
             if (event.target.checked) {
                 enhancementOptions.forEach(option => {
                     option.disabled = true;
@@ -91,6 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         enhancementOptions.forEach(option => {
+            // Enable or disable auto-optimize options
+            // based on other enhancement checkbox
             option.addEventListener('change', () => {
                 const anyChecked = Array.from(enhancementOptions).some(opt => opt.checked);
                 autoOptimizeCheckbox.disabled = anyChecked;
@@ -109,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Style Transfer Page Loaded");
 
         styleProcessButton.addEventListener('click', async () => {
+            // Reset error message and result image visibility
             styleErrorMessage.textContent = '';
             styleResultImage.style.display = 'none';
             styleLoading.style.display = 'block';
@@ -116,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(styleForm);
 
             try {
+                // Send style transfer request to server
                 const response = await fetch('/process_style_transfer', {
                     method: 'POST',
                     body: formData,
@@ -125,12 +140,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.ok) {
+                    // Display styled image
                     const data = await response.json();
                     styleResultImage.src = data.result_image;
                     styleResultImage.style.display = 'block';
                     styleDownloadButton.style.display = 'block';
 
                     styleDownloadButton.onclick = () => {
+                        // Enable download of styled image
                         const a = document.createElement('a');
                         a.href = data.result_image;
                         a.download = 'styled_image.jpg';
@@ -139,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.body.removeChild(a);
                     };
                 } else {
+                    // Display error message
                     const errorData = await response.json();
                     styleErrorMessage.textContent = errorData.error || 'An unknown error occurred.';
                 }
@@ -151,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getCSRFToken() {
+        // Retrieve CSRF token from the form
         const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
         return csrfInput ? csrfInput.value : '';
     }

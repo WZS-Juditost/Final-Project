@@ -1,7 +1,7 @@
 """
 image_filters.py
 ----------------
-Contains functions to apply various image filters like sepia, pencil sketch, oil painting, etc.
+Contains functions to apply various image filters.
 
 Author: Zesheng Wang
 Date: 2024-12-02
@@ -12,7 +12,15 @@ from .image_enhancements import *
 from .utilities import *
 
 def apply_sepia(image):
-    """Apply a sepia tone to the image."""
+    """
+    Apply a sepia tone to the image.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+
+    Returns:
+        numpy.ndarray: The sepia-toned image.
+    """
     kernel = np.array([[0.272, 0.534, 0.131],
                        [0.349, 0.686, 0.168],
                        [0.393, 0.769, 0.189]])
@@ -21,7 +29,15 @@ def apply_sepia(image):
     return sepia_image
 
 def apply_pencil_sketch(image):
-    """Convert the image to a pencil sketch."""
+    """
+    Convert the image to a pencil sketch.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+
+    Returns:
+        numpy.ndarray: The pencil sketch image in BGR format.
+    """
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     inverted = cv2.bitwise_not(gray_image)
     blurred = cv2.GaussianBlur(inverted, (21, 21), 0)
@@ -30,13 +46,29 @@ def apply_pencil_sketch(image):
     return cv2.cvtColor(sketch_image, cv2.COLOR_GRAY2BGR)
 
 def apply_oil_painting(image, size=7, dyn_ratio=1):
-    """Apply an oil painting effect to the image."""
+    """
+    Apply an oil painting effect to the image.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+        size (int): Size of the neighborhood for the effect. Defaults to 7.
+        dyn_ratio (int): Dynamics ratio for the effect. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: The oil-painted image.
+    """
     oil_painting = cv2.xphoto.oilPainting(image, size, dyn_ratio)
     return oil_painting
 
 def convert_to_black_and_white(image):
     """
     Convert the image to black and white (grayscale).
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+
+    Returns:
+        numpy.ndarray: The black-and-white image in BGR format.
     """
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return cv2.cvtColor(gray_image, cv2.COLOR_GRAY2BGR)
@@ -44,6 +76,12 @@ def convert_to_black_and_white(image):
 def process_cartoonization(image):
     """
     Process the image to apply cartoonization effects.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+
+    Returns:
+        numpy.ndarray: The cartoonized image.
     """
     gamma_corrected = adjust_gamma(image, gamma=1.5)
     gray = cv2.cvtColor(gamma_corrected, cv2.COLOR_BGR2GRAY)
@@ -63,6 +101,12 @@ def process_cartoonization(image):
 def apply_hdr_effect(image):
     """
     Apply HDR effect to the image.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+
+    Returns:
+        numpy.ndarray: The HDR-enhanced image.
     """
     image = remove_noise(image)
     hdr = cv2.detailEnhance(image, sigma_s=12, sigma_r=0.15)
@@ -70,10 +114,15 @@ def apply_hdr_effect(image):
 
 def apply_dslr_blur(image, focus_area=None, blur_strength=21):
     """
-    Apply DSLR-like blur effect with a circular focus area and gradual blur transitions.
-    
-    focus_area: A tuple (cx, cy, r) defining the center (cx, cy) and radius (r) of the focus area.
-    blur_strength: Strength of the Gaussian blur applied to the background.
+    Apply DSLR-like blur effect.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+        focus_area (tuple): Center and radius of the focus area.
+        blur_strength (int): Strength of the Gaussian blur. Defaults to 21.
+
+    Returns:
+        numpy.ndarray: The image with DSLR-like blur applied.
     """
     height, width = image.shape[:2]
     if focus_area is None:
@@ -95,7 +144,13 @@ def apply_dslr_blur(image, focus_area=None, blur_strength=21):
 def apply_glitch_effect(image, intensity=10):
     """
     Apply a glitch effect to the image.
-    intensity: How many rows/columns to shift for the glitch.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+        intensity (int): Maximum number of rows or columns to shift.
+
+    Returns:
+        numpy.ndarray: The image with glitch effect applied.
     """
     height, width = image.shape[:2]
     glitch_image = image.copy()
@@ -108,8 +163,14 @@ def apply_glitch_effect(image, intensity=10):
 
 def apply_pixelation(image, pixel_size=10):
     """
-    Apply pixelation effect to the image.
-    pixel_size: Size of each pixel block.
+    Apply a pixelation effect to the image.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+        pixel_size (int): Size of each pixel block. Defaults to 10.
+
+    Returns:
+        numpy.ndarray: The pixelated image.
     """
     height, width = image.shape[:2]
     small_image = cv2.resize(image, (width // pixel_size, height // pixel_size), interpolation=cv2.INTER_NEAREST)
@@ -119,6 +180,16 @@ def apply_pixelation(image, pixel_size=10):
 def apply_filter(image, filter_type, brightness=0, contrast=0, saturation=1.0):
     """
     Apply various filters based on the filter_type parameter.
+
+    Args:
+        image (numpy.ndarray): The input image in BGR format.
+        filter_type (str): The type of filter to apply.
+        brightness (int): Brightness adjustment. Defaults to 0.
+        contrast (int): Contrast adjustment. Defaults to 0.
+        saturation (float): Saturation adjustment. Defaults to 1.0.
+
+    Returns:
+        numpy.ndarray: The filtered image.
     """
     adjusted_image = adjust_brightness_contrast(image, brightness, contrast)
     adjusted_image = adjust_saturation(adjusted_image, saturation)

@@ -65,8 +65,7 @@ A Django-based web application for processing and enhancing images. This applica
    ```
 4. Download the required PyTorch model for style transfer:
    ```bash
-   # Example: Download the VGG-19 model used for neural style transfer
-   wget https://download.pytorch.org/models/vgg19-d01eb7cb.pth -P models/
+   python image_processor/models/download_models.py
    ```
 5. Apply database migrations:
    ```bash
