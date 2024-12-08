@@ -142,7 +142,7 @@ A Django-based web application for processing and enhancing images. This applica
   </tr>
   <tr>
     <td><img src="image_processor/images/md/1.jpg" alt="Input Image" style="width: 200px; height: auto;"></td>
-    <td><img src="image_processor/images/md/2.jpg" alt="Processed Image" style="width: 200px; height: auto;"></td>
+    <td><img src="image_processor/images/md/2.jpeg" alt="Processed Image" style="width: 200px; height: auto;"></td>
     <td><img src="image_processor/images/md/3.jpg" alt="Style Transfer Result" style="width: 200px; height: auto;"></td>
   </tr>
 </table>
